@@ -6,9 +6,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using Kizuna.Plus.PdfLocker.Views.Forms;
+using Kizuna.Plus.WinMvcForm.Framework.Views.Forms;
 
-namespace Kizuna.Plus.PdfLocker
+namespace WindowsFormsApplication
 {
     public partial class MainForm : AbstractForm
     {

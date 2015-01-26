@@ -28,34 +28,34 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.dataGridView = new System.Windows.Forms.DataGridView();
+            this.UserData = new System.Windows.Forms.DataGridView();
             this.NameColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.PasswordColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.IdColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.DescriptionColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.applyButton = new System.Windows.Forms.Button();
-            this.filePathTextBox = new System.Windows.Forms.TextBox();
+            this.FilePath = new System.Windows.Forms.TextBox();
             this.folderSelectbutton = new System.Windows.Forms.Button();
             this.filePathLabel = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.UserData)).BeginInit();
             this.SuspendLayout();
             // 
-            // dataGridView
+            // UserData
             // 
-            this.dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.UserData.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.UserData.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.UserData.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.NameColumn,
             this.PasswordColumn,
             this.IdColumn,
             this.DescriptionColumn});
-            this.dataGridView.Location = new System.Drawing.Point(0, 30);
-            this.dataGridView.Name = "dataGridView";
-            this.dataGridView.RowTemplate.Height = 21;
-            this.dataGridView.Size = new System.Drawing.Size(390, 193);
-            this.dataGridView.TabIndex = 3;
+            this.UserData.Location = new System.Drawing.Point(0, 30);
+            this.UserData.Name = "UserData";
+            this.UserData.RowTemplate.Height = 21;
+            this.UserData.Size = new System.Drawing.Size(390, 193);
+            this.UserData.TabIndex = 3;
             // 
             // NameColumn
             // 
@@ -84,7 +84,6 @@
             // applyButton
             // 
             this.applyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.applyButton.Enabled = false;
             this.applyButton.Location = new System.Drawing.Point(312, 229);
             this.applyButton.Name = "applyButton";
             this.applyButton.Size = new System.Drawing.Size(75, 23);
@@ -93,28 +92,28 @@
             this.applyButton.UseVisualStyleBackColor = true;
             this.applyButton.Click += new System.EventHandler(this.applyButton_Click);
             // 
-            // filePathTextBox
+            // FilePath
             // 
-            this.filePathTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.FilePath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.filePathTextBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Append;
-            this.filePathTextBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystemDirectories;
-            this.filePathTextBox.Location = new System.Drawing.Point(98, 5);
-            this.filePathTextBox.Name = "filePathTextBox";
-            this.filePathTextBox.Size = new System.Drawing.Size(258, 19);
-            this.filePathTextBox.TabIndex = 1;
-            this.filePathTextBox.TextChanged += new System.EventHandler(this.filePathTextBox_TextChanged);
+            this.FilePath.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Append;
+            this.FilePath.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.FileSystemDirectories;
+            this.FilePath.Location = new System.Drawing.Point(98, 5);
+            this.FilePath.Name = "FilePath";
+            this.FilePath.Size = new System.Drawing.Size(258, 19);
+            this.FilePath.TabIndex = 1;
             // 
             // folderSelectbutton
             // 
             this.folderSelectbutton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.folderSelectbutton.CausesValidation = false;
             this.folderSelectbutton.Location = new System.Drawing.Point(362, 3);
             this.folderSelectbutton.Name = "folderSelectbutton";
             this.folderSelectbutton.Size = new System.Drawing.Size(25, 23);
             this.folderSelectbutton.TabIndex = 2;
             this.folderSelectbutton.Text = "...";
             this.folderSelectbutton.UseVisualStyleBackColor = true;
-            this.folderSelectbutton.Click += new System.EventHandler(this.folderSelectButton_Click);
+            this.folderSelectbutton.Click += new System.EventHandler(this.folderSelectbutton_Click);
             // 
             // filePathLabel
             // 
@@ -131,12 +130,12 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.filePathLabel);
             this.Controls.Add(this.folderSelectbutton);
-            this.Controls.Add(this.filePathTextBox);
+            this.Controls.Add(this.FilePath);
             this.Controls.Add(this.applyButton);
-            this.Controls.Add(this.dataGridView);
+            this.Controls.Add(this.UserData);
             this.Name = "UserListView";
             this.Size = new System.Drawing.Size(390, 257);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.UserData)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -144,13 +143,13 @@
 
         #endregion
 
-        private System.Windows.Forms.DataGridView dataGridView;
+        private System.Windows.Forms.DataGridView UserData;
         private System.Windows.Forms.Button applyButton;
         private System.Windows.Forms.DataGridViewTextBoxColumn NameColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn PasswordColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn IdColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn DescriptionColumn;
-        private System.Windows.Forms.TextBox filePathTextBox;
+        private System.Windows.Forms.TextBox FilePath;
         private System.Windows.Forms.Button folderSelectbutton;
         private System.Windows.Forms.Label filePathLabel;
     }

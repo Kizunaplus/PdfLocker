@@ -1,25 +1,41 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Kizuna.Plus.PdfLocker.Controllers.Commands;
-using Kizuna.Plus.PdfLocker.Controllers.State;
+using Kizuna.Plus.WinMvcForm.Framework.Controllers.Commands;
+using Kizuna.Plus.WinMvcForm.Framework.Controllers.State;
+using Kizuna.Plus.WinMvcForm.Framework.Models;
+using Kizuna.Plus.WinMvcForm.Framework.Models.EventArg;
+using Kizuna.Plus.WinMvcForm.Framework.Utility;
+using Microsoft.Win32;
+using WindowsFormsApplication.Models;
+using Kizuna.Plus.WinMvcForm.Framework.Services;
+using Kizuna.Plus.PdfLocker.Framework.Message;
+using Kizuna.Plus.WinMvcForm.Framework.Models.Enums;
+using Kizuna.Plus.WinMvcForm.Framework;
+using Kizuna.Plus.WinMvcForm.Framework.Logger;
+using Kizuna.Plus.PdfLocker;
 using Kizuna.Plus.PdfLocker.Models;
-using Kizuna.Plus.PdfLocker.Models.EventArg;
-using Kizuna.Plus.PdfLocker.Services.CommandLine;
-using Kizuna.Plus.PdfLocker.Services.File;
+using System.Reflection;
 
-namespace Kizuna.Plus.PdfLocker
+namespace WindowsFormsApplication
 {
     /// <summary>
     /// エントリーポイントクラス
     /// </summary>
     static class Program
     {
+        #region 定数
+        /// <summary>
+        /// 64bit IEバージョン設定
+        /// </summary>
+        private const string IE_VERSION_EMULATION_32BIT = @"SOFTWARE\\Wow6432Node\\Microsoft\\Internet Explorer\\MAIN\\FeatureControl\\FEATURE_BROWSER_EMULATION";
+
+        /// <summary>
+        /// 32bit IEバージョン設定
+        /// </summary>
+        private const string IE_VERSION_EMULATION_64BIT = @"SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION";
+        #endregion
+
         #region メンバー変数
         /// <summary>
         /// 多重起動抑止チェック用Mutex
@@ -39,21 +55,33 @@ namespace Kizuna.Plus.PdfLocker
 
             // ログに出力
             var logCommand = new LogCommand();
-            logCommand.Execute(new DebugState(typeof(Application)), new LogMessageEventArgs() { Message = string.Format("Start Process : {0}", processId) });
+            logCommand.Execute(LogType.Debug, FrameworkDebugMessage.ProessStartMessage, processId);
+
+            // IE バージョン設定
+            var targetApplication = Process.GetCurrentProcess().ProcessName + ".exe";
+            int ie_emulation = int.Parse(AppEnviroment.IEVersion);
+            SetIE8KeyforWebBrowserControl(targetApplication, ie_emulation);
+
+            // ServicePoolの初期化
+            ServicePool.Current = new ServicePool();
+            ServicePool.Current.Initialize();
+
 
 #if DUPLICATE_EXEC
             // 多重起動抑止
+            // 条件付きコンパイルにて指定した場合実行を行います。
             if (IsDuplicateExec() == true)
             {
                 // ログに出力
-                logCommand.Execute(new DebugState(typeof(Application)), new LogMessageEventArgs() { Message = string.Format("Duplicate Process : {0}", processId) });
-
+                logCommand.Execute(LogType.Debug, FrameworkDebugMessage.ExistSameProcess, processId);
                 return;
             }
 #endif
 
 #if ENABLE_COMMANDLINE
             // コマンドラインデータの解析
+            // 条件付きコンパイルにて指定した場合実行を行います。
+            logCommand.Execute(LogType.Debug, FrameworkDebugMessage.ProessStartCommandLineMessage, Environment.GetCommandLineArgs());
             ParseCommandLine();
 #endif
 
@@ -61,11 +89,13 @@ namespace Kizuna.Plus.PdfLocker
             Application.SetCompatibleTextRenderingDefault(false);
 #if ENABLE_SPLASH
             // スプラッシュ表示
-            SprashForm.ShowSplash(Properties.Resources.splash);
+            // 条件付きコンパイルにて指定した場合実行を行います。
+            SprashForm.ShowSplash(Kizuna.Plus.PdfLocker.Properties.Resources.splash);
 #endif
 
 #if ENABLE_CONFIGURATION
             // 設定ファイルの読み込み
+            // 条件付きコンパイルにて指定した場合実行を行います。
             ReadConfiguration();
 #endif
 
@@ -74,13 +104,26 @@ namespace Kizuna.Plus.PdfLocker
             // 終了処理
             Application.ApplicationExit += Application_ApplicationExit;
 
+            // Mvc変換インスタンス取得
+            MvcCooperationData.Current = new MvcCooperationData();
+            
             // 起動
             var mainForm = new MainForm();
-            mainForm.ChangeController(AppEnviroment.Default.StartController);
+
+            // StartControllerを実行
+            ActionEventArgs eventArgs = new ActionEventArgs();
+            eventArgs.Controller = AppEnviroment.StartController;
+            ActionCommand command = new ActionCommand();
+            command.Execute(new NonState(typeof(Application)), eventArgs);
+
             Application.Run(mainForm);
+            mainForm.Dispose();
 
             // ログに出力
-            logCommand.Execute(new DebugState(typeof(Application)), new LogMessageEventArgs() { Message = string.Format("End Process : {0}", processId) });
+            LogFactory.Debug(String.Format(FrameworkDebugMessage.ProessEndMessage, processId));
+
+            // IEバージョン設定削除
+            RemoveIE8KeyforWebBrowserControl(targetApplication);
         }
         #endregion
 
@@ -117,7 +160,7 @@ namespace Kizuna.Plus.PdfLocker
         {
             // コマンドラインデータの解析
             CommandLineData commandData;
-            var commandLineParser = new CommandLineService<CommandLineData>();
+            var commandLineParser = new CommandLineUtility<CommandLineData>();
             if (commandLineParser.TryParse(Environment.GetCommandLineArgs(), out commandData) == false)
             {
 #if DEBUG
@@ -129,7 +172,7 @@ namespace Kizuna.Plus.PdfLocker
                 {
                     // ログに出力
                     var logCommand = new LogCommand();
-                    logCommand.Execute(new DebugState(typeof(Application)), new ExceptionEventArgs() { Exception = ex });
+                    logCommand.Execute(LogType.Exception, FrameworkMessage.ExceptionMessage, ex, MethodBase.GetCurrentMethod().Name);
                 }
 #endif
             }
@@ -150,12 +193,12 @@ namespace Kizuna.Plus.PdfLocker
                 ConfigurationData.Current = new ConfigurationData();
             }
 
-            UserSettingData.Current = new UserSettingData().Load(UserSettingData.GetConfigurationFilePath()) as UserSettingData;
+            UserListModel.Current = new UserListModel().Load(UserListModel.GetConfigurationFilePath()) as UserListModel;
 
             // 設定情報を作成
-            if (UserSettingData.Current == null)
+            if (UserListModel.Current == null)
             {
-                UserSettingData.Current = new UserSettingData();
+                UserListModel.Current = new UserListModel();
             }
         }
 
@@ -167,17 +210,112 @@ namespace Kizuna.Plus.PdfLocker
             IModel data = ConfigurationData.Current;
             if (data != null)
             {
-                var service = new BackupFileService();
+                var service = new BackupFileUtility();
                 service.BackupWriteFile(ConfigurationData.GetConfigurationFilePath(), data);
             }
 
-            data = UserSettingData.Current;
+            data = UserListModel.Current;
             if (data != null)
             {
-                var service = new BackupFileService();
-                service.BackupWriteFile(UserSettingData.GetConfigurationFilePath(), data);
+                var service = new BackupFileUtility();
+                service.BackupWriteFile(UserListModel.GetConfigurationFilePath(), data);
             }
+        }
+        #endregion
 
+        #region レジストリ
+        /// <summary>
+        /// WebBrowserのIEバージョン設定
+        /// </summary>
+        /// <param name="appName"></param>
+        private static void SetIE8KeyforWebBrowserControl(string appName, int value)
+        {
+            RegistryKey Regkey = null;
+            try
+            {
+                //For 64 bit Machine 
+                if (Environment.Is64BitOperatingSystem)
+                    Regkey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(IE_VERSION_EMULATION_64BIT, true);
+                else  //For 32 bit Machine 
+                    Regkey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(IE_VERSION_EMULATION_32BIT, true);
+
+                //If the path is not correct or 
+                //If user't have priviledges to access registry 
+                if (Regkey == null)
+                {
+                    return;
+                }
+
+                string FindAppkey = Convert.ToString(Regkey.GetValue(appName));
+
+                // すでに設定済みの場合
+                if (FindAppkey == "" + value)
+                {
+                    return;
+                }
+
+                //If key is not present add the key , Kev value 8000-Decimal 
+                if (string.IsNullOrEmpty(FindAppkey))
+                    Regkey.SetValue(appName, value, RegistryValueKind.DWord);
+
+                //check for the key after adding 
+                FindAppkey = Convert.ToString(Regkey.GetValue(appName));
+            }
+            catch
+            {
+            }
+            finally
+            {
+                //Close the Registry 
+                if (Regkey != null)
+                {
+                    Regkey.Close();
+                }
+            }
+        }
+        /// <summary>
+        /// WebBrowserのIEバージョン設定の削除
+        /// </summary>
+        /// <param name="appName"></param>
+        private static void RemoveIE8KeyforWebBrowserControl(string appName)
+        {
+            RegistryKey Regkey = null;
+            try
+            {
+                //For 64 bit Machine 
+                if (Environment.Is64BitOperatingSystem)
+                    Regkey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(IE_VERSION_EMULATION_64BIT, true);
+                else  //For 32 bit Machine 
+                    Regkey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(IE_VERSION_EMULATION_32BIT, true);
+
+                //If the path is not correct or 
+                //If user't have priviledges to access registry 
+                if (Regkey == null)
+                {
+                    return;
+                }
+
+                string FindAppkey = Convert.ToString(Regkey.GetValue(appName));
+                // キーが存在するかチェック
+                if (FindAppkey == null)
+                {
+                    return;
+                }
+
+                // キーが存在する場合は削除
+                Regkey.DeleteValue(appName, false);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                //Close the Registry 
+                if (Regkey != null)
+                {
+                    Regkey.Close();
+                }
+            }
         }
         #endregion
 
@@ -207,8 +345,7 @@ namespace Kizuna.Plus.PdfLocker
         static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
         {
             // ログに出力
-            var logCommand = new LogCommand();
-            logCommand.Execute(new ExceptionState(typeof(Application)), e);
+            LogFactory.Fatal(FrameworkMessage.UncatchExceptionMessage, e.Exception);
 
 #if DEBUG
             // 再Throw

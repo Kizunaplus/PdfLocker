@@ -1,18 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Kizuna.Plus.PdfLocker.Controllers.Commands;
-using Kizuna.Plus.PdfLocker.Models;
-using Kizuna.Plus.PdfLocker.Controllers.State;
-using Kizuna.Plus.PdfLocker.Models.EventArg;
-using System.Windows.Forms;
 using System.IO;
-using System.Reflection;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.Security;
+using System.Windows.Forms;
+using Kizuna.Plus.WinMvcForm.Framework.Controllers;
+using Kizuna.Plus.WinMvcForm.Framework.Controllers.Commands;
+using Kizuna.Plus.WinMvcForm.Framework.Controllers.State;
+using Kizuna.Plus.WinMvcForm.Framework.Models;
+using Kizuna.Plus.WinMvcForm.Framework.Models.EventArg;
 using PdfSharp.Pdf.IO;
-using Kizuna.Plus.PdfLocker.Services.File;
+using PdfSharp.Pdf.Security;
+using Kizuna.Plus.PdfLocker.Controllers.Commands;
+using Kizuna.Plus.PdfLocker.Models.EventArg;
+using Kizuna.Plus.PdfLocker.Models;
+using WindowsFormsApplication.Models;
+using Kizuna.Plus.WinMvcForm.Framework.Utility;
+using Kizuna.Plus.WinMvcForm.Framework.Views;
+using Kizuna.Plus.WinMvcForm.Framework.Models.Enums;
+using Kizuna.Plus.PdfLocker.Framework.Message;
 
 namespace Kizuna.Plus.PdfLocker.Controllers
 {
@@ -103,8 +106,10 @@ namespace Kizuna.Plus.PdfLocker.Controllers
                             MessageBox.Show("パスワード設定が完了しました。");
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        var logCommand = new LogCommand();
+                        logCommand.Execute(LogType.Exception, FrameworkMessage.ExceptionMessage, ex);
                         MessageBox.Show("PDFにパスワードの設定でエラーが発生しました。");
                     }
                 }
@@ -123,14 +128,14 @@ namespace Kizuna.Plus.PdfLocker.Controllers
                         return;
                     }
 
-                    var data = new UserSettingData().Load(UserSettingData.GetConfigurationFilePath()) as UserSettingData;
+                    var data = new UserListModel().Load(UserListModel.GetConfigurationFilePath()) as UserListModel;
 
                     // 設定情報を作成
-                    if (UserSettingData.Current != null)
+                    if (UserListModel.Current != null)
                     {
                         ConfigurationData.Current.UserSettingPath = fileEventArgs.FilePath;
-                        UserSettingData.Current = data;
-                        GetDefaultView().Refresh();
+                        UserListModel.Current = data;
+                        GetDefaultView().InitBindData();
                     }
                 }
             });
@@ -142,11 +147,11 @@ namespace Kizuna.Plus.PdfLocker.Controllers
                 var fileEventArgs = args as FileEventArgs;
                 if (fileEventArgs != null)
                 {
-                    var data = UserSettingData.Current;
+                    var data = UserListModel.Current;
                     if (data != null)
                     {
-                        var service = new BackupFileService();
-                        if (service.BackupWriteFile(UserSettingData.GetConfigurationFilePath(), data) == false)
+                        var service = new BackupFileUtility();
+                        if (service.BackupWriteFile(UserListModel.GetConfigurationFilePath(), data) == false)
                         {
                             MessageBox.Show("ファイルの保存に失敗しました。");
                             return;
@@ -165,10 +170,10 @@ namespace Kizuna.Plus.PdfLocker.Controllers
                 var fileEventArgs = args as FileEventArgs;
                 if (fileEventArgs != null)
                 {
-                    var data = UserSettingData.Current;
+                    var data = UserListModel.Current;
                     if (data != null)
                     {
-                        var service = new BackupFileService();
+                        var service = new BackupFileUtility();
                         if (service.BackupWriteFile(fileEventArgs.FilePath, data) == false)
                         {
                             MessageBox.Show("ファイルの保存に失敗しました。");
@@ -185,12 +190,19 @@ namespace Kizuna.Plus.PdfLocker.Controllers
         }
         #endregion
 
+        public override IView Index()
+        {
+            ViewStateData.CurrentThread.Items["Model"] = UserListModel.Current;
+
+            return base.Index();
+        }
+
         #region 破棄処理
         /// <summary>
         /// 破棄処理
         /// </summary>
         /// <param name="isDispose"></param>
-        protected virtual void Dispose(bool isDispose)
+        protected override void Dispose(bool isDispose)
         {
             var register = CommandRegister.Current;
             register.UnregistOfSource(GetDefaultView());

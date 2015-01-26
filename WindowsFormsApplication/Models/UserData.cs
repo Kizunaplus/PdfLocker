@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
+using Kizuna.Plus.WinMvcForm.Framework.Models;
+using Kizuna.Plus.WinMvcForm.Framework.Models.Validation;
+using Kizuna.Plus.WinMvcForm.Framework.Utility;
 
 namespace Kizuna.Plus.PdfLocker.Models
 {
@@ -26,7 +29,8 @@ namespace Kizuna.Plus.PdfLocker.Models
             set;
         }
 
-        [DataMemberAttribute]
+        [RequiresInput]
+        [XmlIgnore]
         /// <summary>
         /// ユーザパスワード
         /// </summary>
@@ -36,6 +40,27 @@ namespace Kizuna.Plus.PdfLocker.Models
             set;
         }
 
+        [DataMemberAttribute(Name = "Password")]
+        /// <summary>
+        /// ユーザパスワード
+        /// </summary>
+        public String PasswordCrypt
+        {
+            get
+            {
+                return CryptUtility.encrypt(this.Password);
+            }
+            set
+            {
+                try
+                {
+                    this.Password = CryptUtility.decrypt(value);
+                }
+                catch { }
+            }
+        }
+
+        [RequiresInput]
         [DataMemberAttribute]
         /// <summary>
         /// ユーザID
